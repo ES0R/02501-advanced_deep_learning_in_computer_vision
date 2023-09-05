@@ -19,9 +19,9 @@ class Attention(nn.Module):
         self.scale = self.head_dim ** -0.5
 
         ####################### insert code here ####################### 
-        #
-        #
-        #
+        self.k_projection = nn.Linear(embed_dim, embed_dim)
+        self.q_projection = nn.Linear(embed_dim, embed_dim)
+        self.v_projection = nn.Linear(embed_dim, embed_dim)
         ################################################################
         self.o_projection = nn.Linear(embed_dim, embed_dim)
 
@@ -30,7 +30,7 @@ class Attention(nn.Module):
         batch_size, seq_length, embed_dim = x.size()
         keys    = self.k_projection(x)
         queries = self.q_projection(x)
-        values  = self.v_projeciton(x)
+        values  = self.v_projection(x)
 
         # Rearrange keys, queries and values 
         # from batch_size x seq_length x embed_dim to (batch_size x num_head) x seq_length x head_dim
@@ -39,17 +39,18 @@ class Attention(nn.Module):
         values = rearrange(values, 'b s (h d) -> (b h) s d', h=self.num_heads, d=self.head_dim)
 
         ####################### insert code here ####################### 
-        #
-        #
-        #
-        #
+        attention_scores = torch.matmul(queries, torch.transpose(keys, 1, 2)) * self.scale
+
+        attention_weights = F.softmax(attention_scores, dim=-1)
+
+        out = torch.matmul(attention_weights, values)
         ################################################################
 
         # Rearragne output
         # from (batch_size x num_head) x seq_length x head_dim to batch_size x seq_length x embed_dim
         out = rearrange(out, '(b h) s d -> b s (h d)', h=self.num_heads, d=self.head_dim)
 
-        assert attention.size() == (batch_size*self.num_heads, seq_length, seq_length)
+        assert attention_weights.size() == (batch_size*self.num_heads, seq_length, seq_length)
         assert out.size() == (batch_size, seq_length, embed_dim)
 
         return self.o_projection(out)
@@ -91,9 +92,9 @@ class PositionalEncoding(nn.Module):
 
         # Your implemntation
         ####################### insert code here ####################### 
-        #
-        #
-        #
+        div_term = torch.exp(torch.arange(0, embed_dim, 2) * -(math.log(10000.0) / embed_dim))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
         ################################################################
 
         pe = pe.unsqueeze(0)
@@ -104,28 +105,11 @@ class PositionalEncoding(nn.Module):
         return x + self.pe[:, :seq_length]
         #return self.dropout(x)
 
-class PositionalEmbedding(nn.Module):
-    def __init__(self, embed_dim, max_seq_len=512):
 
-        super(PositionalEmbedding, self).__init__()
-        # Your implemntation
-        ####################### insert code here ####################### 
-        #
-        ################################################################
-
-    def forward(self, x):
-        batch_size, seq_length, embed_dim = x.size()
-        # Your implemntation
-        ####################### insert code here ####################### 
-        #
-        #
-        # return x
-        ################################################################
-        
 
 class TransformerClassifier(nn.Module):
     def __init__(self, embed_dim, num_heads, num_layers, max_seq_len,
-                 pos_enc='fixed', pool='cls', dropout=0.0, 
+                 pos_enc='fixed', pool='cls', dropout=0.5, 
                  fc_dim=None, num_tokens=50_000, num_classes=2, 
                  
     ):
@@ -140,7 +124,7 @@ class TransformerClassifier(nn.Module):
 
         # Initialize cls token parameter
         ####################### insert code here ####################### 
-        if self.pool == 'cls':
+        #if self.pool == 'cls':
             #
             #
         ################################################################
@@ -166,7 +150,7 @@ class TransformerClassifier(nn.Module):
 
         # Include cls token in the input sequence
         ####################### insert code here #######################
-        if self.pool == 'cls':
+        #if self.pool == 'cls':
             #
             #
         ################################################################
