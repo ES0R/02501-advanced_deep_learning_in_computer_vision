@@ -118,10 +118,10 @@ def main(embed_dim=128, num_heads=4, num_layers=4, num_epochs=20,
 
 if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"]= str(0)
-    device = torch.device('cpu')  #('cuda' if torch.cuda.is_available() else 'cpu')  
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')  
     print(f"Model will run on {device}")
     set_seed(seed=1)
-    main(embed_dim=128, num_heads=4, num_layers=4, num_epochs=20,
-         pos_enc='fixed', pool='mean', dropout=0.1, fc_dim=None,
+    main(embed_dim=128, num_heads=4, num_layers=4, num_epochs=30,
+         pos_enc='fixed', pool='mean', dropout=0.0, fc_dim=None,
          batch_size=16, lr=1e-4, warmup_steps=625, 
          weight_decay=1e-4, gradient_clipping=1)
