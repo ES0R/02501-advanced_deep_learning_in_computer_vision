@@ -37,8 +37,7 @@ def image_to_patches(image, patch_size, image_grid=True):
         # HINT: B x num_patchs x ph * pw * c (flatten patches!)
         ####### insert code here #######
         patches = rearrange(image, 'b c (nph ph) (npw pw) -> b (nph npw) c ph pw', ph=patch_h, pw=patch_w) 
-       
-        
+
         x = torch.flatten(patches,start_dim=2, end_dim=4)
         print(x.size())
         print(batch_size,num_patches,(patch_h * patch_w * C))

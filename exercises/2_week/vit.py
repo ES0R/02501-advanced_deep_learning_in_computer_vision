@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-import numpy as np
 
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
@@ -32,9 +31,6 @@ class Attention(nn.Module):
         self.o_projection = nn.Linear(embed_dim, embed_dim)
 
     def forward(self, x):
-        # Check if x is a tuple and get the tensor from the tuple
-        if isinstance(x, tuple):
-            x = x[0]
 
         batch_size, seq_len, embed_dim = x.size()
         keys    = self.k_projection(x)
@@ -47,25 +43,25 @@ class Attention(nn.Module):
         queries = rearrange(queries, 'b s (h d) -> (b h) s d', h=self.num_heads, d=self.head_dim)
         values = rearrange(values, 'b s (h d) -> (b h) s d', h=self.num_heads, d=self.head_dim)
         
-        x = self.layernorm1(attention_out + x)
-
         attention_logits = torch.matmul(queries, keys.transpose(1, 2))
         attention_logits = attention_logits * self.scale
         attention = F.softmax(attention_logits, dim=-1)
         out = torch.matmul(attention, values)
 
-        
-        
-        
+        # Rearragne output
+        # from (batch_size x num_head) x seq_len x head_dim to batch_size x seq_len x embed_dim
         out = rearrange(out, '(b h) s d -> b s (h d)', h=self.num_heads, d=self.head_dim)
-        
-        return self.o_projection(out), attention
 
-class TransformerBlock(nn.Module):
-    def __init__(self, embed_dim, num_heads):
+        assert attention.size() == (batch_size*self.num_heads, seq_len, seq_len)
+        assert out.size() == (batch_size, seq_len, embed_dim)
+
+        return self.o_projection(out), attention_logits
+
+class EncoderBlock(nn.Module):
+    def __init__(self, embed_dim, num_heads, fc_dim=None, dropout=0.0):
         super().__init__()
 
-        self.attention = Attention(embed_dim, num_heads)
+        self.attention = Attention(embed_dim=embed_dim, num_heads=num_heads)
         self.layernorm1 = nn.LayerNorm(embed_dim)
         self.layernorm2 = nn.LayerNorm(embed_dim)
 
@@ -79,21 +75,14 @@ class TransformerBlock(nn.Module):
         )
         self.dropout = nn.Dropout(dropout)
 
-
-
     def forward(self, x):
-        # Check if x is a tuple and get the tensor from the tuple
-        if isinstance(x, tuple):
-            x = x[0]
-        
-        attention_out, attention_scores = self.attention(x)
+        attention_out, attention_scores = self.attention(x)  # Get attention scores and attended values
         x = self.layernorm1(attention_out + x)
-        
         x = self.dropout(x)
         fc_out = self.fc(x)
         x = self.layernorm2(fc_out + x)
         x = self.dropout(x)
-        return x, attention_scores  # Return attention scores
+        return x, attention_scores
 
 class ViT(nn.Module):
     def __init__(self, image_size, channels, patch_size, embed_dim, num_heads, num_layers,
@@ -147,41 +136,38 @@ class ViT(nn.Module):
             transformer_blocks.append(
                 EncoderBlock(embed_dim=embed_dim, num_heads=num_heads, fc_dim=fc_dim, dropout=dropout))
 
-        self.transformer_blocks = nn.ModuleList([TransformerBlock(embed_dim, num_heads) for _ in range(num_layers)])
+        self.transformer_blocks = nn.Sequential(*transformer_blocks)
         self.classifier = nn.Linear(embed_dim, num_classes)
         self.dropout = nn.Dropout(dropout)
 
 
     def forward(self, img):
-
         tokens = self.to_patch_embedding(img)
         batch_size, num_patches, embed_dim = tokens.size()
         
         if self.pool == 'cls':
             cls_tokens = repeat(self.cls_token, '1 1 e -> b 1 e', b=batch_size)
             tokens = torch.cat([cls_tokens, tokens], dim=1)
-            num_patches+=1
+            num_patches += 1
         
-        positions =  self.positional_embedding.to(img.device, dtype=img.dtype)
-        if self.pos_enc == 'fixed' and self.pool=='cls':
+        positions = self.positional_embedding.to(img.device, dtype=img.dtype)
+        if self.pos_enc == 'fixed' and self.pool == 'cls':
             positions = torch.cat([torch.zeros(1, embed_dim).to(img.device), positions], dim=0)
-            
-        for block in self.transformer_blocks:
-            x = block(x)  # Ensure that x remains a tensor throughout
-        
         x = tokens + positions
         
         x = self.dropout(x)
-        x = self.transformer_blocks(x)
+        for block in self.transformer_blocks:
+            x, _ = block(x)  # Get the output and discard the attention scores for the forward pass
         
-        if self.pool =='max':
+        if self.pool == 'max':
             x = x.max(dim=1)[0]
-        elif self.pool =='mean':
+        elif self.pool == 'mean':
             x = x.mean(dim=1)
         elif self.pool == 'cls':
             x = x[:, 0]
+    
+        return self.classifier(x)
 
-        return out
     
     
     def get_attention_maps(self, img):
@@ -202,7 +188,7 @@ class ViT(nn.Module):
         attention_scores_list = []  # List to store attention scores from each block
     
         for block in self.transformer_blocks:
-            x, attention_scores = block.attention(x)  # Get attention scores
+            x, attention_scores = block(x)  # Get attention scores
             attention_scores_list.append(attention_scores)
     
             x = block.layernorm1(x)
@@ -213,5 +199,3 @@ class ViT(nn.Module):
     
         attention_maps = torch.stack(attention_scores_list, dim=1)  # Stack attention scores from all blocks
         return attention_maps
-    
-    
