@@ -14,18 +14,33 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import cv2
 
+import warnings
+
+warnings.filterwarnings("ignore")   
+
 def plot_attention_maps(image, attention_map, patch_size):
-    # Resize the attention map to match the image size
-    image = np.transpose(np.transpose(image),axes=[1,0,2])
+    # Display the original image
+    image = np.transpose(image, (1, 2, 0))
     plt.imshow(image)
     plt.axis('off')
+    plt.title("Original Image")
     plt.show()
     
-    attention_map = attention_map.squeeze().cpu().numpy()
-    attention_map = np.transpose(np.transpose(attention_map),axes=[1,0,2])
-    attention_map = np.mean(attention_map, axis=2)  # Take the mean across all heads
+    # Visualize the mean attention scores across all heads
+    mean_attention_map = np.mean(attention_map.cpu().numpy(), axis=2)
+    visualize_attention_map(image, mean_attention_map, patch_size, title="Mean Attention Across All Heads")
     
-    # Upscale the attention map to the original image size
+    # Visualize the max attention scores across all heads
+    max_attention_map = np.max(attention_map.cpu().numpy(), axis=2)
+    visualize_attention_map(image, max_attention_map, patch_size, title="Max Attention Across All Heads")
+    
+    # Visualize attention scores for each individual head
+    #num_heads = attention_map.shape[0]
+    #for i in range(num_heads):
+    #    individual_attention_map = attention_map[:, :, i].cpu().numpy()
+    #    visualize_attention_map(image, individual_attention_map, patch_size, title=f"Attention for Head {i+1}")
+
+def visualize_attention_map(image, attention_map, patch_size, title=""):
     H, W, _ = image.shape
     attention_map_resized = cv2.resize(attention_map, (W, H), interpolation=cv2.INTER_LINEAR)
     
@@ -35,16 +50,20 @@ def plot_attention_maps(image, attention_map, patch_size):
 
     # Create a heatmap overlay
     heatmap = cv2.applyColorMap(np.uint8(255 * attention_map_resized), cv2.COLORMAP_JET)
-    
-    # Rotate the heatmap by 90 degrees
-    heatmap = cv2.transpose(heatmap)
 
-    # Display the rotated overlaid image
-    plt.imshow(heatmap)
+    # Display the heatmap
+    plt.imshow(heatmap, alpha=0.8)
+    plt.imshow(image, alpha=0.6)
     plt.axis('off')
+    plt.title(title)
     plt.show()
     
-    return heatmap
+    plt.imshow(heatmap, alpha=0.8)
+    plt.axis('off')
+    plt.title("Corresponding Heatmap")
+    plt.show()
+
+
 
 
 def set_seed(seed=1):
@@ -97,9 +116,9 @@ def prepare_dataloaders(batch_size, classes=[3, 7]):
 
 
 def main(image_size=(32,32), patch_size=(4,4), channels=3, 
-         embed_dim=128, num_heads=4, num_layers=4, num_classes=2,
-         pos_enc='learnable', pool='cls', dropout=0.3, fc_dim=None, 
-         num_epochs=20, batch_size=16, lr=1e-4, warmup_steps=625,
+         embed_dim=128, num_heads=4, num_layers=6, num_classes=2,
+         pos_enc='learnable', pool='mean', dropout=0.1, fc_dim=None, 
+         num_epochs=25, batch_size=16, lr=1e-4, warmup_steps=625,
          weight_decay=1e-3, gradient_clipping=1, num_examples=3
          
     ):
