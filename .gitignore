@@ -3,7 +3,7 @@
 data/
 .data/
 models/
-
+runs/
 
 # HTML
 *.html
