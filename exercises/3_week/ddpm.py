@@ -43,16 +43,16 @@ class Diffusion:
         Should return q(x_t | x_0), noise
         """
         # TASK 2: Implement the forward process
-        sqrt_alpha_bar =  torch.sqrt(self.alphas_bar[t]) # HINT: use torch.sqrt to calculate the sqrt of alphas_bar at timestep t
-        sqrt_alpha_bar = sqrt_alpha_bar[:, None, None, None] # match image dimensions
+        sqrt_alpha_bar =  torch.sqrt(self.alphas_bar[t]) 
+        sqrt_alpha_bar = sqrt_alpha_bar[:, None, None, None] 
 
-        sqrt_one_minus_alpha_bar = torch.sqrt(1 - self.alphas_bar[t]) # HINT: calculate the sqrt of 1 - alphas_bar at time step t
-        sqrt_one_minus_alpha_bar = sqrt_one_minus_alpha_bar[:, None, None, None]# match image dimensions
+        sqrt_one_minus_alpha_bar = torch.sqrt(1 - self.alphas_bar[t])
+        sqrt_one_minus_alpha_bar = sqrt_one_minus_alpha_bar[:, None, None, None]
         
-        noise = torch.randn_like(x) # HINT: sample noise from a normal distribution. It should match the shape of x 
+        noise = torch.randn_like(x) 
         assert noise.shape == x.shape, 'Invalid shape of noise'
         
-        x_noised = sqrt_alpha_bar * x + sqrt_one_minus_alpha_bar * noise # HINT: Create the noisy version of x. See Eq. 4 in the ddpm paper at page 2
+        x_noised = sqrt_alpha_bar * x + sqrt_one_minus_alpha_bar * noise 
         return x_noised, noise
     
 

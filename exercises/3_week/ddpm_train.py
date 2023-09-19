@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+import os   
 from PIL import Image
 import random
 import torch
@@ -16,7 +16,7 @@ from ddpm import Diffusion
 from model import UNet
 
 SEED = 1
-DATASET_SIZE = 40000
+DATASET_SIZE = None
 
 def set_seed(seed=SEED):
     random.seed(seed)
@@ -59,7 +59,7 @@ def create_result_folders(experiment_name):
     os.makedirs(os.path.join("results", experiment_name), exist_ok=True)
 
 def train(device='cpu', T=500, img_size=16, input_channels=3, channels=32, time_dim=256,
-          batch_size=100, lr=1e-3, num_epochs=1, experiment_name="ddpm", show=False):
+          batch_size=100, lr=1e-3, num_epochs=30, experiment_name="ddpm", show=False):
     """Implements algrorithm 1 (Training) from the ddpm paper at page 4"""
     create_result_folders(experiment_name)
     dataloader = prepare_dataloader(batch_size)
