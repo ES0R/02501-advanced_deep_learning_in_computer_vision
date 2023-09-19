@@ -78,11 +78,9 @@ class Diffusion:
         # TASK 3: implement the reverse process
         mean, std = self.p_mean_std(model, x_t, t)
         
-        # HINT: Having calculate the mean and std of p(x{x_t} | x_t), we sample noise from a normal distribution.
-        # see line 3 of the Algorithm 2 (Sampling) at page 4 of the ddpm paper.
         noise = torch.randn_like(mean)
 
-        x_t_prev = mean + std + noise # Calculate x_{t-1}, see line 4 of the Algorithm 2 (Sampling) at page 4 of the ddpm paper.
+        x_t_prev = mean + std + noise
         return x_t_prev
 
 

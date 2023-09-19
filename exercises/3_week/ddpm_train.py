@@ -82,10 +82,10 @@ def train(device='cpu', T=500, img_size=16, input_channels=3, channels=32, time_
             images = images.to(device)
 
             # TASK 4: implement the training loop
-            t = diffusion.sample_timesteps(images.shape[0]).to(device) # line 3 from the Training algorithm
-            x_t, noise = diffusion.q_sample(images,t) # inject noise to the images (forward process), HINT: use q_sample
-            predicted_noise = model.forward(x_t, t) # predict noise of x_t using the UNet
-            loss = mse(predicted_noise, noise) # loss between noise and predicted noise
+            t = diffusion.sample_timesteps(images.shape[0]).to(device)
+            x_t, noise = diffusion.q_sample(images,t) 
+            predicted_noise = model.forward(x_t, t) 
+            loss = mse(predicted_noise, noise) 
 
             
             optimizer.zero_grad()
