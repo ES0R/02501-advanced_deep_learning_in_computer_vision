@@ -80,7 +80,7 @@ class Diffusion:
         
         noise = torch.randn_like(mean)
 
-        x_t_prev = mean + std + noise
+        x_t_prev = mean + std*noise
         return x_t_prev
 
 
