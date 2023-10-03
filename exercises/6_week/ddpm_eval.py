@@ -2,6 +2,7 @@ import os
 import matplotlib.pyplot as plt
 from scipy import linalg
 from tqdm import tqdm
+from scipy.linalg import sqrtm
 
 # torch
 import torch
@@ -49,11 +50,17 @@ def feature_statistics(features):
     return mu, sigma
 
 def frechet_distance(mu1, sigma1, mu2, sigma2):
-    # https://en.wikipedia.org/wiki/Fr%C3%A9chet_distance
-    # HINT: https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.sqrtm.html
-    # Implement FID score
+    mu_diff = mu1 - mu2
+    mu_diff_sq = np.dot(mu_diff, mu_diff)
 
-    fid = ... 
+    # Calculate the product of covariances
+    cov_mean = sqrtm(sigma1.dot(sigma2))
+
+    # Calculate the trace of the product of covariances
+    sigma_diff = sigma1 + sigma2 - 2.0 * cov_mean
+
+    # Calculate the FID
+    fid = mu_diff_sq + np.trace(sigma_diff)
 
     return fid
 
