@@ -138,9 +138,6 @@ class UNet(nn.Module):
         self.outc = nn.Conv2d(channels, c_out, kernel_size=1)
 
         if num_classes is not None:
-            # Project one-hot encoded labels to the time embedding dimension 
-            # Implement it as a 2-layer MLP with a GELU activation in-between
-            # self.label_emb = ...
             self.label_emb = nn.Sequential(
                 nn.Linear(num_classes, time_dim // 2),
                 nn.GELU(),
